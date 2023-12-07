@@ -18,7 +18,7 @@ components:
             },
         }
     container:
-      image: registry.access.redhat.com/ubi9/ubi-init:9.3-5.1699549339
+      image: registry.ford.com/devspaces/udi-ubi9:22023.12.03-1733@sha256:386aee6a6bc3d217500361dba045f8f2a4f112a9cc2c2ea1a6ffa2c4377f0ecc
       env:
         - name: VSCODE_NODEJS_RUNTIME_DIR
           value: /usr/bin
@@ -34,6 +34,8 @@ components:
           value: "30"
         - name: KUBEDOCK_ENABLED
           value: "true"
+        - name: KUBEDOCK_PARAMS
+          value: "--image-pull-secrets=image-pull-secret --initimage=kubedock-image=registry.ford.com/devspaces/kubedock:22023.11.22-2244@sha256:a94ba85c1364018b9654528a56ebfc42876dccdff6f0eeef7e2f5714ec57469d--request-cpu=100m,500m --request-memory=100Mi,500Mi --reverse-proxy"
       sourceMapping: /projects
       cpuLimit: 2000m
       cpuRequest: 500m
