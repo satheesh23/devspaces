@@ -1,59 +1,63 @@
 schemaVersion: 2.2.0
 metadata:
-  name: nodejs
-  version: 1.0.0
-  attributes:
-    alpha.build-context: src
-    alpha.build-dockerfile: Dockerfile
+  name: tools-parent
 components:
-  - name: buildguidance
+  ## https://github.com/eclipse/che/issues/21778#issuecomment-1499216238
+  - name: tools
     attributes:
-      tool: console-import
+      controller.devfile.io/merge-contribution: true
+      pod-overrides:
+        {
+          "metadata":
+            {
+              "annotations":
+                {
+                  "io.kubernetes.cri-o.Devices": "/dev/fuse",
+                  "io.openshift.podman-fuse": "",
+                },
+            },
+        }
     container:
       image: registry.access.redhat.com/ubi9/ubi-init:9.3-5.1699549339
-      memoryLimit: 1024Mi
-      endpoints:
-        - name: http-3001
-          targetPort: 3001
-  - name: runtime
-    container:
-      image: registry.access.redhat.com/ubi9/nodejs-20:1-17
-      memoryLimit: 1024Mi
+      env:
+        - name: VSCODE_NODEJS_RUNTIME_DIR
+          value: /usr/bin
+        - name: TESTCONTAINERS_HOST_OVERRIDE
+          value: tcp://127.0.0.1:2475
+        - name: TESTCONTAINERS_RYUK_DISABLED
+          value: "true"
+        - name: TESTCONTAINERS_CHECKS_DISABLE
+          value: "true"
+        - name: SDKMAN_CANDIDATES_DIR
+          value: /home/user/.sdkman/candidates
+        - name: KUBEDOCK_TIMEOUT
+          value: "30"
+        - name: KUBEDOCK_ENABLED
+          value: "true"
+      sourceMapping: /projects
+      cpuLimit: 2000m
+      cpuRequest: 500m
+      memoryLimit: 2Gi
+      memoryRequest: 512Mi
       mountSources: true
-      sourceMapping: /project
       endpoints:
-        - name: http-3000
-          targetPort: 3000
+        - name: kubedock
+          targetPort: 2475
+          protocol: https
+          exposure: internal
+          secure: true
+          attributes:
+            urlRewriteSupported: false
+  - name: projects
+    volume:
+      size: 5Gi
 commands:
-  - id: install
+  ## https://github.com/spuranam/devspaces/pull/5
+  # Required for running nvm & sdkman in postStart commands of child devfile
+  - id: load-environment
     exec:
-      component: runtime
-      commandLine: npm install
-      workingDir: /project/src
-      group:
-        kind: build
-        isDefault: true
-  - id: run
-    exec:
-      component: runtime
-      commandLine: npm start
-      workingDir: /project/src
-      group:
-        kind: run
-        isDefault: true
-  - id: debug
-    exec:
-      component: runtime
-      commandLine: npm run debug
-      workingDir: /project/src
-      group:
-        kind: debug
-        isDefault: true
-  - id: test
-    exec:
-      component: runtime
-      commandLine: npm test
-      workingDir: /project/src
-      group:
-        kind: test
-        isDefault: true
+      component: tools
+      commandLine: source /home/tooling/.bashrc
+events:
+  postStart:
+    - load-environment
