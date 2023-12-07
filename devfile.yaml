@@ -10,7 +10,7 @@ components:
     attributes:
       tool: console-import
     container:
-      image: buildguidanceimage-placeholder
+      image: registry.access.redhat.com/ubi9/ubi-init:9.3-5.1699549339
       memoryLimit: 1024Mi
       endpoints:
         - name: http-3001
